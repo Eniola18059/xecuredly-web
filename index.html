@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xecuredly | Cybersecurity · AI · Data Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#030812;--navy2:#060f20;--navy3:#0a1628;
+  --neon:#00f5d4;--neon2:#00c2ff;--neon3:#39ff14;
+  --accent:#ff6b35;--accent2:#ff2d78;
+  --text:#c8d8e8;--dim:#4a6a88;
+  --border:rgba(0,245,212,0.1);--border2:rgba(0,194,255,0.12);
+  --glow:0 0 20px rgba(0,245,212,0.35);
+  --glow2:0 0 60px rgba(0,245,212,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--navy);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;overflow-x:hidden;cursor:none;}
+
+/* CANVAS */
+#particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+
+/* CURSOR */
+.cursor{width:6px;height:6px;background:var(--neon);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transition:transform .1s;box-shadow:0 0 10px var(--neon),0 0 20px var(--neon);}
+.cursor-ring{width:30px;height:30px;border:1px solid rgba(0,245,212,.45);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transition:all .12s ease;}
+@media(pointer:coarse){.cursor,.cursor-ring{display:none;}}
+
+/* GRID BG */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,245,212,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,212,.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
+
+/* PRELOADER */
+#preloader{position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .7s ease;}
+#preloader.gone{opacity:0;pointer-events:none;}
+.pl-corners span{position:fixed;width:36px;height:36px;border-color:rgba(0,245,212,.7);border-style:solid;}
+.pl-corners span:nth-child(1){top:16px;left:16px;border-width:2px 0 0 2px;}
+.pl-corners span:nth-child(2){top:16px;right:16px;border-width:2px 2px 0 0;}
+.pl-corners span:nth-child(3){bottom:16px;left:16px;border-width:0 0 2px 2px;}
+.pl-corners span:nth-child(4){bottom:16px;right:16px;border-width:0 2px 2px 0;}
+/* sweeping scanline */
+.pl-sweep{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(0,245,212,.8) 50%,transparent 100%);box-shadow:0 0 12px 2px rgba(0,245,212,.4);animation:plSweep 2s linear infinite;top:0;}
+@keyframes plSweep{0%{top:0;opacity:0}3%{opacity:1}97%{opacity:1}100%{top:100vh;opacity:0}}
+/* shield */
+.pl-shield{position:relative;width:100px;height:116px;margin-bottom:12px;}
+.pl-shield svg{width:100%;height:100%;filter:drop-shadow(0 0 16px rgba(0,245,212,.6));}
+.pl-ring{position:absolute;border-radius:50%;border:1px solid rgba(0,245,212,.2);}
+.pl-ring1{inset:-18px;animation:spin 4s linear infinite;}
+.pl-ring2{inset:-32px;border-color:rgba(0,194,255,.1);animation:spin 6s linear infinite reverse;}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* logo */
+.pl-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:#fff;letter-spacing:-.5px;}
+.pl-logo em{color:#00f5d4;font-style:normal;text-shadow:0 0 20px rgba(0,245,212,.9);}
+.pl-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,245,212,.45);letter-spacing:.3em;text-transform:uppercase;margin-bottom:8px;}
+/* progress */
+.pl-bar-wrap{width:260px;}
+.pl-bar-top{display:flex;justify-content:space-between;margin-bottom:6px;}
+.pl-bar-top span{font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6a88;letter-spacing:.1em;}
+.pl-bar-top em{font-family:'Share Tech Mono',monospace;font-size:10px;color:#00f5d4;font-style:normal;font-weight:bold;}
+.pl-track{height:2px;background:rgba(255,255,255,.06);overflow:hidden;position:relative;}
+.pl-fill{height:100%;width:0;background:linear-gradient(90deg,#00c2ff,#00f5d4);box-shadow:0 0 8px #00f5d4;transition:width .25s ease;}
+/* log */
+.pl-log{font-family:'Share Tech Mono',monospace;font-size:10px;height:72px;overflow:hidden;width:300px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;}
+.pl-line{opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;}
+.pl-line.v{opacity:1;transform:none;}
+.pl-line.ok{color:#39ff14;}
+.pl-line.warn{color:#ffbd2e;}
+.pl-line.err{color:#ff2d78;}
+.pl-line.info{color:#4a6a88;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,8,18,.9);backdrop-filter:blur(24px);transition:padding .3s;}
+nav.scrolled{padding:12px 48px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;color:#fff;text-decoration:none;position:relative;z-index:1001;}
+.logo span{color:var(--neon);text-shadow:var(--glow);}
+
+.nav-links{display:flex;gap:32px;list-style:none;align-items:center;}
+.nav-links a{color:var(--dim);text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;transition:color .2s;font-family:'Share Tech Mono',monospace;position:relative;}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--neon);box-shadow:var(--glow);transition:width .3s;}
+.nav-links a:hover{color:var(--neon);}
+.nav-links a:hover::after{width:100%;}
+.nav-cta{background:transparent!important;border:1px solid var(--neon)!important;color:var(--neon)!important;padding:8px 20px!important;transition:all .2s!important;}
+.nav-cta:hover{background:var(--neon)!important;color:var(--navy)!important;box-shadow:var(--glow)!important;}
+.nav-cta:hover::after{display:none;}
+.nav-academy{color:var(--neon)!important;position:relative;}
+.nav-academy::before{content:'';position:absolute;inset:-4px -8px;border:1px solid rgba(0,245,212,.2);animation:academyBorder 2s ease-in-out infinite;}
+@keyframes academyBorder{0%,100%{opacity:.4;border-color:rgba(0,245,212,.2)}50%{opacity:1;border-color:rgba(0,245,212,.5);box-shadow:0 0 12px rgba(0,245,212,.15)}}
+
+/* HAMBURGER */
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:none;z-index:1002;padding:4px;}
+.hamburger span{display:block;width:26px;height:2px;background:var(--neon);transition:all .3s;transform-origin:center;}
+.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.active span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+/* MOBILE MENU */
+.mobile-menu{position:fixed;inset:0;background:rgba(3,8,18,.98);backdrop-filter:blur(24px);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.77,0,.18,1);}
+.mobile-menu.active{opacity:1;visibility:visible;}
+.mobile-menu ul{list-style:none;text-align:center;width:100%;}
+.mobile-menu ul li{border-bottom:1px solid var(--border);overflow:hidden;}
+.mobile-menu ul li a{display:block;padding:24px 32px;font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:-1px;transition:color .3s,padding-left .3s;transform:translateY(40px);opacity:0;transition:transform .4s, opacity .4s, color .3s, padding-left .3s;}
+.mobile-menu.active ul li a{transform:translateY(0);opacity:1;}
+.mobile-menu ul li:nth-child(1) a{transition-delay:.05s;}
+.mobile-menu ul li:nth-child(2) a{transition-delay:.1s;}
+.mobile-menu ul li:nth-child(3) a{transition-delay:.15s;}
+.mobile-menu ul li:nth-child(4) a{transition-delay:.2s;}
+.mobile-menu ul li:nth-child(5) a{transition-delay:.25s;}
+.mobile-menu ul li:nth-child(6) a{transition-delay:.3s;}
+.mobile-menu ul li a:hover{color:var(--neon);padding-left:48px;}
+.mobile-cta-wrap{margin-top:32px;transform:translateY(20px);opacity:0;transition:transform .4s .3s, opacity .4s .3s;}
+.mobile-menu.active .mobile-cta-wrap{transform:translateY(0);opacity:1;}
+.mobile-menu-contact{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:.15em;margin-top:16px;}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 48px 80px;position:relative;overflow:hidden;}
+.hero-content{position:relative;z-index:2;max-width:1200px;margin:0 auto;width:100%;}
+
+/* GLITCH */
+.glitch{position:relative;display:inline-block;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+.glitch::before{color:var(--neon2);animation:glitch1 5s infinite;clip-path:polygon(0 0,100% 0,100% 35%,0 35%);opacity:.8;}
+.glitch::after{color:var(--accent2);animation:glitch2 5s infinite;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);opacity:.8;}
+@keyframes glitch1{0%,88%,100%{transform:translate(0)}89%{transform:translate(-3px,-1px)}90%{transform:translate(3px,1px)}91%{transform:translate(-1px,3px)}92%{transform:translate(0)}}
+@keyframes glitch2{0%,88%,100%{transform:translate(0)}89%{transform:translate(3px,1px)}90%{transform:translate(-3px,-1px)}91%{transform:translate(2px,-2px)}92%{transform:translate(0)}}
+
+/* HERO EYEBROW */
+.hero-eyebrow{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon);letter-spacing:.3em;text-transform:uppercase;margin-bottom:28px;display:inline-flex;align-items:center;gap:12px;opacity:0;animation:fadeSlideUp .6s .3s forwards;border:1px solid rgba(0,245,212,.15);padding:8px 16px;position:relative;overflow:hidden;}
+.hero-eyebrow::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(0,245,212,.1),transparent);animation:eyebrowSheen 3s ease-in-out infinite 2s;}
+@keyframes eyebrowSheen{0%{left:-100%}100%{left:200%}}
+.hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:dotPulse 1.2s ease-in-out infinite;box-shadow:0 0 8px var(--neon);}
+@keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.6}}
+
+/* HERO TITLE — multi-line cinematic */
+.hero-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(38px,6.5vw,96px);line-height:.9;letter-spacing:-3px;color:#fff;margin-bottom:32px;opacity:0;animation:fadeSlideUp .7s .5s forwards;}
+.hero-title .line{display:block;overflow:hidden;}
+.hero-title .line-inner{display:block;animation:lineReveal .8s cubic-bezier(.77,0,.18,1) forwards;opacity:0;}
+.hero-title .line:nth-child(1) .line-inner{animation-delay:.5s;}
+.hero-title .line:nth-child(2) .line-inner{animation-delay:.68s;}
+.hero-title .line:nth-child(3) .line-inner{animation-delay:.86s;}
+@keyframes lineReveal{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.hero-title .nt{
+  color:transparent;
+  -webkit-text-stroke:2px var(--neon);
+  position:relative;
+  display:inline-block;
+  animation:neonTextFill 1.5s ease 1.2s forwards;
+}
+@keyframes neonTextFill{
+  0%{color:transparent;text-shadow:none;}
+  50%{color:transparent;text-shadow:0 0 40px rgba(0,245,212,.8),0 0 80px rgba(0,245,212,.4);}
+  100%{color:var(--neon);-webkit-text-stroke:0px;text-shadow:0 0 60px rgba(0,245,212,.5),0 0 120px rgba(0,245,212,.2);}
+}
+.hero-title .word-secure{
+  position:relative;
+  display:inline-block;
+}
+.hero-title .word-secure::after{
+  content:'';
+  position:absolute;
+  bottom:-4px;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--neon),var(--neon2));
+  transform:scaleX(0);
+  transform-origin:left;
+  animation:underlineReveal .6s ease 1.4s forwards;
+  box-shadow:var(--glow);
+}
+@keyframes underlineReveal{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.hero-title .italic-word{font-style:italic;color:rgba(255,255,255,.35);letter-spacing:-2px;}
+.hero-title .bracket{color:rgba(0,245,212,.3);font-weight:400;}
+
+/* HERO DESCRIPTOR */
+.hero-desc-wrap{max-width:560px;margin-bottom:48px;opacity:0;animation:fadeSlideUp .7s .9s forwards;}
+.hero-desc-top{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.hero-desc-top::before{content:'';width:16px;height:1px;background:var(--dim);}
+.hero-desc{font-size:16px;line-height:1.8;color:var(--text);font-weight:300;}
+.hero-desc strong{color:#fff;font-weight:500;}
+
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap;opacity:0;animation:fadeSlideUp .7s 1.1s forwards;}
+.btn-p{background:var(--neon);color:var(--navy);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:16px 36px;text-decoration:none;font-weight:bold;border:none;cursor:none;transition:all .25s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));position:relative;overflow:hidden;}
+.btn-p::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.15);transform:translateX(-100%) skewX(-20deg);transition:transform .4s;}
+.btn-p:hover::after{transform:translateX(150%) skewX(-20deg);}
+.btn-p:hover{box-shadow:0 0 50px rgba(0,245,212,.5);transform:translateY(-2px);}
+.btn-g{border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:16px 36px;text-decoration:none;transition:all .25s;cursor:none;}
+.btn-g:hover{border-color:var(--neon);color:var(--neon);box-shadow:inset 0 0 20px rgba(0,245,212,.05);}
+
+.hero-metrics{display:flex;gap:48px;margin-top:72px;flex-wrap:wrap;opacity:0;animation:fadeSlideUp .7s 1.3s forwards;}
+.metric{border-left:1px solid var(--border);padding-left:20px;}
+.metric-n{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:#fff;line-height:1;}
+.metric-n em{color:var(--neon);font-style:normal;}
+.metric-l{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;margin-top:4px;}
+
+/* ORB */
+.orb{position:absolute;border-radius:50%;pointer-events:none;}
+.orb1{width:700px;height:700px;background:radial-gradient(circle,rgba(0,245,212,.055) 0%,transparent 68%);top:-150px;right:-150px;animation:orbFloat 6s ease-in-out infinite;}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,194,255,.04) 0%,transparent 68%);bottom:-100px;left:20%;animation:orbFloat 8s ease-in-out infinite reverse;}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(255,107,53,.03) 0%,transparent 68%);top:30%;left:-50px;animation:orbFloat 5s ease-in-out infinite 2s;}
+@keyframes orbFloat{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.08) translateY(-20px)}}
+
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+/* SCROLL LINE */
+.scroll-hint{position:absolute;bottom:32px;left:48px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.scroll-hint span{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:.2em;writing-mode:vertical-rl;transform:rotate(180deg);}
+.scroll-line{width:1px;height:60px;background:linear-gradient(var(--neon),transparent);animation:scrollLine 1.8s ease-in-out infinite;}
+@keyframes scrollLine{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:1;transform:scaleY(.75)}}
+
+/* TICKER */
+.ticker{background:var(--neon);padding:10px 0;overflow:hidden;white-space:nowrap;position:relative;z-index:1;}
+.ticker-inner{display:inline-flex;animation:tick 25s linear infinite;}
+.ticker-inner:hover{animation-play-state:paused;}
+.tick-item{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--navy);letter-spacing:.1em;text-transform:uppercase;padding:0 40px;}
+.tick-item::before{content:'// ';opacity:.5;}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* SECTION BASE */
+section{position:relative;z-index:1;}
+.wrap{max-width:1200px;margin:0 auto;padding:100px 48px;}
+.stag{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);letter-spacing:.25em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.stag::before{content:'';width:20px;height:1px;background:var(--neon);}
+.sh{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(30px,4vw,54px);color:#fff;letter-spacing:-1.5px;line-height:1;margin-bottom:14px;}
+.ss{color:var(--dim);font-size:14px;line-height:1.75;max-width:520px;}
+
+/* SERVICES */
+.services-bg{background:var(--navy2);}
+.svc-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:60px;gap:32px;flex-wrap:wrap;}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);}
+.svc-card{background:var(--navy2);padding:40px 36px;position:relative;overflow:hidden;transition:background .35s;cursor:none;}
+.svc-card::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--neon),var(--neon2));transition:width .5s;box-shadow:var(--glow);}
+.svc-card:hover::before{width:100%;}
+.svc-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,212,.03),transparent);opacity:0;transition:opacity .35s;}
+.svc-card:hover::after{opacity:1;}
+.svc-card:hover{background:rgba(10,22,40,.95);}
+.svc-card:hover .svc-num{color:var(--neon);}
+.svc-num{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.2em;margin-bottom:20px;transition:color .3s;}
+.svc-ico{font-size:26px;margin-bottom:18px;display:block;transition:transform .3s;}
+.svc-card:hover .svc-ico{transform:scale(1.2) rotate(-5deg);}
+.svc-t{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:#fff;margin-bottom:10px;letter-spacing:-.3px;}
+.svc-d{font-size:13px;color:var(--dim);line-height:1.7;}
+.svc-arrow{position:absolute;bottom:28px;right:28px;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:14px;opacity:0;transform:translate(-8px,8px);transition:all .3s;}
+.svc-card:hover .svc-arrow{opacity:1;transform:translate(0,0);}
+
+/* STATS COUNTER STRIP */
+.stats-strip{background:linear-gradient(90deg,var(--navy3),var(--navy2));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:60px 48px;}
+.stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:40px;}
+.stat-item{text-align:center;position:relative;}
+.stat-item::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:var(--border);}
+.stat-item:last-child::after{display:none;}
+.stat-num{font-family:'Syne',sans-serif;font-size:56px;font-weight:800;color:#fff;line-height:1;}
+.stat-num em{color:var(--neon);font-style:normal;text-shadow:var(--glow);}
+.stat-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-top:8px;}
+
+/* PROCESS */
+.process{background:var(--navy);}
+.process-track{margin-top:72px;position:relative;}
+.process-track::before{content:'';position:absolute;left:28px;top:0;bottom:0;width:1px;background:linear-gradient(var(--neon),var(--neon2),transparent);opacity:.3;}
+.process-step{display:flex;gap:48px;margin-bottom:56px;position:relative;cursor:none;}
+.process-step:last-child{margin-bottom:0;}
+.step-num-wrap{flex-shrink:0;width:56px;display:flex;flex-direction:column;align-items:center;}
+.step-num{width:56px;height:56px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--neon);position:relative;z-index:1;background:var(--navy);transition:all .4s;}
+.process-step:hover .step-num{border-color:var(--neon);background:rgba(0,245,212,.08);box-shadow:var(--glow);}
+.step-body{padding-top:12px;flex:1;}
+.step-body h3{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:#fff;margin-bottom:8px;letter-spacing:-.3px;transition:color .3s;}
+.process-step:hover .step-body h3{color:var(--neon);}
+.step-body p{font-size:14px;color:var(--dim);line-height:1.75;max-width:600px;}
+.step-tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--neon);letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--border);padding:4px 10px;margin-bottom:10px;}
+
+/* TECH STACK */
+.tech{background:var(--navy2);}
+.tech-grid{display:flex;flex-wrap:wrap;gap:12px;margin-top:56px;}
+.tech-pill{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.1em;padding:10px 18px;border:1px solid var(--border);color:var(--dim);transition:all .3s;cursor:none;position:relative;overflow:hidden;}
+.tech-pill::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,212,.1),rgba(0,194,255,.05));transform:translateX(-100%);transition:transform .35s;}
+.tech-pill:hover::before{transform:translateX(0);}
+.tech-pill:hover{color:var(--neon);border-color:rgba(0,245,212,.35);box-shadow:0 0 16px rgba(0,245,212,.1);}
+.tech-group{width:100%;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--neon);letter-spacing:.2em;text-transform:uppercase;margin-top:24px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.tech-group:first-child{margin-top:0;}
+
+/* WHY US */
+.why{background:var(--navy);}
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.why-list{margin-top:48px;}
+.why-item{padding:24px 0;border-bottom:1px solid var(--border);display:flex;gap:20px;align-items:flex-start;transition:padding-left .3s;cursor:none;}
+.why-item:first-child{border-top:1px solid var(--border);}
+.why-item:hover{padding-left:10px;}
+.why-n{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);padding-top:3px;min-width:28px;}
+.why-item h4{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:6px;letter-spacing:-.2px;}
+.why-item p{font-size:13px;color:var(--dim);line-height:1.65;}
+
+/* TERMINAL */
+.terminal{background:var(--navy3);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 0 60px rgba(0,245,212,.06);}
+.t-bar{background:rgba(0,245,212,.04);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:center;}
+.t-dot{width:10px;height:10px;border-radius:50%;}
+.t-bar span.ttitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-left:8px;letter-spacing:.1em;}
+.t-body{padding:28px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:2.1;}
+.t-ln{display:flex;gap:10px;}
+.t-pr{color:var(--neon);}
+.t-cm{color:#fff;}
+.t-out{color:var(--dim);padding-left:20px;}
+.t-ok{color:var(--neon3);padding-left:20px;}
+.t-err{color:var(--accent2);padding-left:20px;}
+.t-cursor{display:inline-block;width:8px;height:14px;background:var(--neon);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* TESTIMONIALS */
+.testi-bg{background:var(--navy2);}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:64px;}
+.tc{background:var(--navy3);border:1px solid var(--border);padding:36px;position:relative;overflow:hidden;transition:all .35s;cursor:none;}
+.tc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,212,.04),transparent);opacity:0;transition:opacity .35s;}
+.tc:hover::before{opacity:1;}
+.tc:hover{border-color:rgba(0,245,212,.25);transform:translateY(-6px);box-shadow:0 24px 60px rgba(0,0,0,.5);}
+.tc-q{font-size:56px;color:var(--neon);opacity:.25;font-family:'Syne',sans-serif;line-height:1;margin-bottom:12px;}
+.tc-stars{color:var(--neon);font-size:12px;letter-spacing:3px;margin-bottom:14px;}
+.tc-t{font-size:14px;line-height:1.8;color:var(--text);margin-bottom:28px;}
+.tc-a{display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);padding-top:20px;}
+.tc-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--navy);}
+.tc-av-info h5{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;}
+.tc-av-info span{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.08em;}
+
+/* CERTIFICATIONS */
+.certs-strip{background:var(--navy);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:36px 48px;}
+.certs-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:40px;flex-wrap:wrap;}
+.certs-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;min-width:100px;}
+.cert-badges{display:flex;gap:12px;align-items:center;flex-wrap:wrap;flex:1;}
+.cb{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.1em;padding:6px 14px;border:1px solid var(--border);transition:all .25s;cursor:none;}
+.cb:hover{border-color:var(--neon);color:var(--neon);box-shadow:var(--glow);}
+
+/* FAQ */
+.faq{background:var(--navy3);}
+.faq-list{margin-top:64px;max-width:760px;}
+.faq-item{border-bottom:1px solid var(--border);overflow:hidden;}
+.faq-q{padding:24px 0;display:flex;justify-content:space-between;align-items:center;cursor:none;gap:16px;}
+.faq-q h4{font-family:'Syne',sans-serif;font-weight:600;font-size:17px;color:#fff;letter-spacing:-.2px;transition:color .3s;}
+.faq-item.open .faq-q h4{color:var(--neon);}
+.faq-icon{flex-shrink:0;width:28px;height:28px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:16px;transition:all .3s;}
+.faq-item.open .faq-icon{background:var(--neon);color:var(--navy);transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.77,0,.18,1);}
+.faq-a p{padding:0 0 24px;font-size:14px;color:var(--dim);line-height:1.75;}
+.faq-item.open .faq-a{max-height:200px;}
+
+/* CONTACT */
+.contact-bg{background:var(--navy2);}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.contact-info-items{margin-top:40px;display:flex;flex-direction:column;gap:24px;}
+.ci{display:flex;gap:16px;}
+.ci-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);letter-spacing:.12em;text-transform:uppercase;min-width:70px;padding-top:2px;}
+.ci-val{font-size:14px;color:var(--text);line-height:1.6;}
+.ci-val a{color:var(--text);text-decoration:none;transition:color .2s;}
+.ci-val a:hover{color:var(--neon);}
+.form-g{margin-bottom:16px;}
+.form-g label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);letter-spacing:.15em;text-transform:uppercase;display:block;margin-bottom:8px;}
+.form-g input,.form-g select,.form-g textarea{width:100%;background:rgba(255,255,255,.025);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 16px;outline:none;transition:border-color .25s,box-shadow .25s;}
+.form-g input:focus,.form-g select:focus,.form-g textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,245,212,.07),inset 0 0 12px rgba(0,245,212,.03);}
+.form-g select option{background:var(--navy2);}
+.form-g textarea{resize:vertical;min-height:120px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-submit{width:100%;background:var(--neon);color:var(--navy);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.15em;text-transform:uppercase;padding:18px;border:none;cursor:none;font-weight:bold;transition:all .25s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));position:relative;overflow:hidden;}
+.form-submit::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.12);transform:translateX(-100%) skewX(-20deg);transition:transform .45s;}
+.form-submit:hover::after{transform:translateX(150%) skewX(-20deg);}
+.form-submit:hover{box-shadow:0 0 50px rgba(0,245,212,.4);transform:translateY(-2px);}
+.form-note{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:.1em;}
+
+/* WHATSAPP FLOAT */
+.wa-float{position:fixed;bottom:28px;right:28px;z-index:500;display:flex;align-items:center;gap:0;cursor:none;}
+.wa-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(37,211,102,.4);transition:all .3s;flex-shrink:0;}
+.wa-btn:hover{transform:scale(1.1);box-shadow:0 8px 32px rgba(37,211,102,.6);}
+.wa-btn svg{width:28px;height:28px;fill:#fff;}
+.wa-label{background:#25D366;color:#fff;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.08em;padding:10px 16px 10px 20px;border-radius:24px 0 0 24px;margin-right:-12px;opacity:0;transform:translateX(20px);transition:all .3s;pointer-events:none;white-space:nowrap;}
+.wa-float:hover .wa-label{opacity:1;transform:translateX(0);}
+.wa-pulse{position:absolute;top:0;right:0;width:14px;height:14px;background:var(--accent2);border-radius:50%;border:2px solid var(--navy);animation:waPulse 2s ease-in-out infinite;}
+@keyframes waPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3);box-shadow:0 0 8px rgba(255,45,120,.6)}}
+
+/* FOOTER */
+footer{background:var(--navy);border-top:1px solid var(--border);padding:64px 48px 32px;}
+.footer-grid{max-width:1200px;margin:0 auto;}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:56px;}
+.f-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;letter-spacing:-.5px;margin-bottom:16px;}
+.f-logo span{color:var(--neon);}
+.f-desc{font-size:13px;color:var(--dim);line-height:1.75;margin-bottom:20px;}
+.f-social{display:flex;gap:12px;}
+.f-soc{width:34px;height:34px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;transition:all .25s;cursor:none;text-decoration:none;}
+.f-soc:hover{border-color:var(--neon);color:var(--neon);box-shadow:var(--glow);}
+.f-col h5{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;letter-spacing:-.2px;margin-bottom:16px;}
+.f-col ul{list-style:none;}
+.f-col ul li{margin-bottom:10px;}
+.f-col ul li a{font-size:13px;color:var(--dim);text-decoration:none;transition:color .2s;}
+.f-col ul li a:hover{color:var(--neon);}
+.footer-bottom{border-top:1px solid var(--border);padding-top:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.footer-copy{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.08em;}
+.footer-legal{display:flex;gap:24px;}
+.footer-legal a{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-decoration:none;letter-spacing:.08em;transition:color .2s;}
+.footer-legal a:hover{color:var(--neon);}
+
+/* ANIMATIONS */
+.fade-up{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
+.fade-up.in{opacity:1;transform:translateY(0);}
+.fade-left{opacity:0;transform:translateX(-32px);transition:opacity .7s ease,transform .7s ease;}
+.fade-left.in{opacity:1;transform:translateX(0);}
+.fade-right{opacity:0;transform:translateX(32px);transition:opacity .7s ease,transform .7s ease;}
+.fade-right.in{opacity:1;transform:translateX(0);}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .svc-grid{grid-template-columns:repeat(2,1fr);}
+  .testi-grid{grid-template-columns:repeat(2,1fr);}
+  .footer-top{grid-template-columns:1fr 1fr;gap:32px;}
+  .stats-inner{grid-template-columns:repeat(2,1fr);}
+  .stat-item::after{display:none;}
+  .why-grid{grid-template-columns:1fr;}
+  .contact-grid{grid-template-columns:1fr;gap:48px;}
+}
+@media(max-width:768px){
+  nav{padding:16px 24px;}
+  .nav-links{display:none;}
+  .hamburger{display:flex;}
+  .hero{padding:100px 24px 72px;}
+  .scroll-hint{display:none;}
+  .wrap{padding:72px 24px;}
+  .svc-grid{grid-template-columns:1fr;}
+  .testi-grid{grid-template-columns:1fr;}
+  .footer-top{grid-template-columns:1fr;}
+  .stats-strip{padding:48px 24px;}
+  .stats-inner{grid-template-columns:repeat(2,1fr);}
+  .certs-strip{padding:28px 24px;}
+  footer{padding:48px 24px 24px;}
+  .form-row{grid-template-columns:1fr;}
+  .hero-metrics{gap:28px;}
+  .metric-n{font-size:32px;}
+  .contact-grid{gap:40px;}
+  .footer-bottom{flex-direction:column;text-align:center;}
+}
+@media(max-width:480px){
+  .hero-title{font-size:36px;letter-spacing:-1.5px;}
+  .stats-inner{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <div class="pl-sweep"></div>
+  <div class="pl-corners"><span></span><span></span><span></span><span></span></div>
+  <div class="pl-shield">
+    <div class="pl-ring pl-ring1"></div>
+    <div class="pl-ring pl-ring2"></div>
+    <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sg" x1="0" y1="0" x2="100" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00f5d4"/><stop offset="100%" stop-color="#00c2ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M50 4 L92 22 L92 56 C92 82 73 104 50 116 C27 104 8 82 8 56 L8 22 Z" stroke="url(#sg)" stroke-width="2" fill="rgba(0,245,212,0.06)"/>
+      <path d="M50 14 L82 28 L82 56 C82 76 67 96 50 106 C33 96 18 76 18 56 L18 28 Z" stroke="rgba(0,245,212,0.15)" stroke-width="1" fill="none"/>
+      <rect x="36" y="54" width="28" height="22" rx="3" stroke="url(#sg)" stroke-width="1.5" fill="rgba(0,245,212,0.08)"/>
+      <path d="M38 54 L38 46 C38 39 62 39 62 46 L62 54" stroke="url(#sg)" stroke-width="1.5" fill="none"/>
+      <circle cx="50" cy="65" r="4" fill="url(#sg)"/>
+      <line x1="50" y1="69" x2="50" y2="73" stroke="url(#sg)" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <div class="pl-logo">X<em>ecuredly</em></div>
+  <div class="pl-sub">Securing your digital future</div>
+  <div class="pl-bar-wrap">
+    <div class="pl-bar-top"><span id="pl-stage">Initializing...</span><em id="pl-pct">0%</em></div>
+    <div class="pl-track"><div class="pl-fill" id="pl-fill"></div></div>
+  </div>
+  <div class="pl-log" id="pl-log"></div>
+</div>
+
+<canvas id="particleCanvas"></canvas>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- WHATSAPP FLOAT -->
+<a class="wa-float" href="https://wa.me/18175424307" target="_blank" rel="noopener">
+  <div class="wa-label">Chat on WhatsApp</div>
+  <div class="wa-btn" style="position:relative;">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    <div class="wa-pulse"></div>
+  </div>
+</a>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a href="#" class="logo">X<span>ecuredly</span></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#why">Why Us</a></li>
+    <li><a href="#testimonials">Clients</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#" class="nav-academy">X-Academy ✦</a></li>
+    <li><a href="#contact" class="nav-cta">Get Started</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><a href="#services" onclick="closeMenu()">Services</a></li>
+    <li><a href="#process" onclick="closeMenu()">Process</a></li>
+    <li><a href="#why" onclick="closeMenu()">Why Us</a></li>
+    <li><a href="#testimonials" onclick="closeMenu()">Clients</a></li>
+    <li><a href="#faq" onclick="closeMenu()">FAQ</a></li>
+    <li><a href="#" onclick="closeMenu()" style="color:var(--neon)!important;">X-Academy ✦</a></li>
+  </ul>
+  <div class="mobile-cta-wrap">
+    <a href="#contact" class="btn-p" onclick="closeMenu()">Get Started →</a>
+  </div>
+  <div class="mobile-menu-contact" style="margin-top:20px;">+1 (430) 346-9273</div>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="dot"></span> Trusted by 200+ Organizations Globally</div>
+
+    <h1 class="hero-title">
+      <span class="line"><span class="line-inner"><span class="glitch" data-text="Securing">Securing</span></span></span>
+      <span class="line"><span class="line-inner">Your <span class="nt word-secure">Digital</span></span></span>
+      <span class="line"><span class="line-inner"><span class="italic-word">Future.</span> <span class="bracket">//</span></span></span>
+    </h1>
+
+    <div class="hero-desc-wrap">
+      <div class="hero-desc-top">What we do</div>
+      <p class="hero-desc">
+        <strong>Xecuredly</strong> delivers expert-led solutions in <strong>Cybersecurity</strong>, <strong>Data Analytics</strong>, <strong>AI Integration</strong>, and <strong>Project Management</strong> — engineered for organizations that operate in a world where failure is not an option.
+      </p>
+    </div>
+
+    <div class="hero-btns">
+      <a href="#contact" class="btn-p">Start a Project →</a>
+      <a href="#services" class="btn-g">Explore Services</a>
+    </div>
+
+    <div class="hero-metrics">
+      <div class="metric"><div class="metric-n counter" data-target="10">0<em>+</em></div><div class="metric-l">Years Experience</div></div>
+      <div class="metric"><div class="metric-n counter" data-target="200">0<em>+</em></div><div class="metric-l">Happy Clients</div></div>
+      <div class="metric"><div class="metric-n counter" data-target="98">0<em>%</em></div><div class="metric-l">Satisfaction Rate</div></div>
+      <div class="metric"><div class="metric-n counter" data-target="50">0<em>+</em></div><div class="metric-l">Senior Consultants</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="tick-item">Cybersecurity Consulting</span>
+    <span class="tick-item">Data Analytics</span>
+    <span class="tick-item">AI Integration</span>
+    <span class="tick-item">PMO Setup</span>
+    <span class="tick-item">Risk Management</span>
+    <span class="tick-item">Consultant Resourcing</span>
+    <span class="tick-item">Training Programs</span>
+    <span class="tick-item">Digital Transformation</span>
+    <span class="tick-item">Penetration Testing</span>
+    <span class="tick-item">Cloud Security</span>
+    <span class="tick-item">Cybersecurity Consulting</span>
+    <span class="tick-item">Data Analytics</span>
+    <span class="tick-item">AI Integration</span>
+    <span class="tick-item">PMO Setup</span>
+    <span class="tick-item">Risk Management</span>
+    <span class="tick-item">Consultant Resourcing</span>
+    <span class="tick-item">Training Programs</span>
+    <span class="tick-item">Digital Transformation</span>
+    <span class="tick-item">Penetration Testing</span>
+    <span class="tick-item">Cloud Security</span>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section class="services-bg" id="services">
+  <div class="wrap">
+    <div class="svc-head">
+      <div>
+        <div class="stag fade-up">Our Expertise</div>
+        <h2 class="sh fade-up">What We Do</h2>
+      </div>
+      <p class="ss fade-up">Six high-impact service areas. One integrated partner. We handle the complexity so you can focus on growth.</p>
+    </div>
+    <div class="svc-grid fade-up">
+      <div class="svc-card"><div class="svc-num">01 —</div><span class="svc-ico">🛡</span><h3 class="svc-t">Cybersecurity Consulting</h3><p class="svc-d">Expert-led risk management, compliance frameworks, threat modeling, and security architecture design to protect your organization end-to-end.</p><div class="svc-arrow">↗</div></div>
+      <div class="svc-card"><div class="svc-num">02 —</div><span class="svc-ico">📊</span><h3 class="svc-t">Data Analytics & Insights</h3><p class="svc-d">Transform raw data into strategic intelligence with custom dashboards, data pipelines, and predictive models tuned to your industry's KPIs.</p><div class="svc-arrow">↗</div></div>
+      <div class="svc-card"><div class="svc-num">03 —</div><span class="svc-ico">🤖</span><h3 class="svc-t">Artificial Intelligence</h3><p class="svc-d">Leverage AI for intelligent automation, forecasting, and process optimization — implemented by engineers with real-world production experience.</p><div class="svc-arrow">↗</div></div>
+      <div class="svc-card"><div class="svc-num">04 —</div><span class="svc-ico">⚙️</span><h3 class="svc-t">PMO Setup & Optimization</h3><p class="svc-d">Establish or scale your Project Management Office with the right governance models, tools, and trained professionals to drive consistent delivery.</p><div class="svc-arrow">↗</div></div>
+      <div class="svc-card"><div class="svc-num">05 —</div><span class="svc-ico">🤝</span><h3 class="svc-t">Consultant Resourcing</h3><p class="svc-d">Access a vetted network of senior professionals for short or long-term engagements across cybersecurity, data, AI, and project management.</p><div class="svc-arrow">↗</div></div>
+      <div class="svc-card"><div class="svc-num">06 —</div><span class="svc-ico">🎓</span><h3 class="svc-t">Training & Capacity Building</h3><p class="svc-d">Structured, hands-on programs in cybersecurity, data analytics, AI, and project delivery — led by certified practitioners who've done it for real.</p><div class="svc-arrow">↗</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item fade-up"><div class="stat-num"><span class="counter2" data-target="10">0</span><em>+</em></div><div class="stat-lbl">Years of Expertise</div></div>
+    <div class="stat-item fade-up" style="transition-delay:.1s"><div class="stat-num"><span class="counter2" data-target="200">0</span><em>+</em></div><div class="stat-lbl">Organizations Served</div></div>
+    <div class="stat-item fade-up" style="transition-delay:.2s"><div class="stat-num"><span class="counter2" data-target="50">0</span><em>+</em></div><div class="stat-lbl">Senior Consultants</div></div>
+    <div class="stat-item fade-up" style="transition-delay:.3s"><div class="stat-num"><span class="counter2" data-target="98">0</span><em>%</em></div><div class="stat-lbl">Client Satisfaction</div></div>
+  </div>
+</div>
+
+<!-- PROCESS -->
+<section class="process" id="process">
+  <div class="wrap">
+    <div class="stag fade-up">How We Work</div>
+    <h2 class="sh fade-up">From Brief to Breakthrough</h2>
+    <p class="ss fade-up">Our proven 5-step methodology ensures every engagement delivers measurable results — on time and within scope.</p>
+    <div class="process-track">
+      <div class="process-step fade-up">
+        <div class="step-num-wrap"><div class="step-num">01</div></div>
+        <div class="step-body"><div class="step-tag">Discovery</div><h3>Deep-Dive Assessment</h3><p>We start by thoroughly understanding your environment, threat landscape, data maturity, and business objectives — no assumptions, no templates.</p></div>
+      </div>
+      <div class="process-step fade-up" style="transition-delay:.1s">
+        <div class="step-num-wrap"><div class="step-num">02</div></div>
+        <div class="step-body"><div class="step-tag">Strategy</div><h3>Custom Solution Design</h3><p>Our certified experts architect a bespoke strategy aligned to your goals, compliance requirements, budget, and timeline — built to scale.</p></div>
+      </div>
+      <div class="process-step fade-up" style="transition-delay:.2s">
+        <div class="step-num-wrap"><div class="step-num">03</div></div>
+        <div class="step-body"><div class="step-tag">Execution</div><h3>Agile Implementation</h3><p>We deploy rapidly using an agile framework — iterating in sprints, keeping you in the loop at every stage, and adapting to what we learn.</p></div>
+      </div>
+      <div class="process-step fade-up" style="transition-delay:.3s">
+        <div class="step-num-wrap"><div class="step-num">04</div></div>
+        <div class="step-body"><div class="step-tag">Validation</div><h3>Testing & Quality Assurance</h3><p>Every solution is rigorously tested — penetration tested, data-validated, or process-audited — before we hand over the keys.</p></div>
+      </div>
+      <div class="process-step fade-up" style="transition-delay:.4s">
+        <div class="step-num-wrap"><div class="step-num">05</div></div>
+        <div class="step-body"><div class="step-tag">Continuity</div><h3>Ongoing Support & Growth</h3><p>We stay engaged post-delivery with monitoring, training, and continuous improvement programs so your investment keeps compounding.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech" id="tech">
+  <div class="wrap">
+    <div class="stag fade-up">Technology</div>
+    <h2 class="sh fade-up">Tools We Master</h2>
+    <p class="ss fade-up">We don't sell platforms — we know them. Our consultants are certified and battle-tested across the industry's leading tools.</p>
+    <div class="tech-grid fade-up">
+      <div class="tech-group">Cybersecurity</div>
+      <div class="tech-pill">CrowdStrike</div><div class="tech-pill">Splunk</div><div class="tech-pill">Palo Alto NGFW</div><div class="tech-pill">Microsoft Sentinel</div><div class="tech-pill">Tenable.io</div><div class="tech-pill">Qualys</div><div class="tech-pill">Rapid7</div><div class="tech-pill">Okta</div><div class="tech-pill">CyberArk</div>
+      <div class="tech-group">Data & Analytics</div>
+      <div class="tech-pill">Power BI</div><div class="tech-pill">Tableau</div><div class="tech-pill">Snowflake</div><div class="tech-pill">dbt</div><div class="tech-pill">Apache Spark</div><div class="tech-pill">Databricks</div><div class="tech-pill">Google BigQuery</div><div class="tech-pill">Looker</div>
+      <div class="tech-group">Artificial Intelligence</div>
+      <div class="tech-pill">OpenAI API</div><div class="tech-pill">Azure AI</div><div class="tech-pill">AWS SageMaker</div><div class="tech-pill">TensorFlow</div><div class="tech-pill">LangChain</div><div class="tech-pill">HuggingFace</div><div class="tech-pill">Google Vertex AI</div>
+      <div class="tech-group">Project Management</div>
+      <div class="tech-pill">Jira</div><div class="tech-pill">Monday.com</div><div class="tech-pill">MS Project</div><div class="tech-pill">Asana</div><div class="tech-pill">ServiceNow</div><div class="tech-pill">Confluence</div>
+    </div>
+  </div>
+</section>
+
+<!-- CERTS -->
+<div class="certs-strip">
+  <div class="certs-inner">
+    <span class="certs-lbl">Certified In</span>
+    <div class="cert-badges">
+      <span class="cb">CISSP</span><span class="cb">CISM</span><span class="cb">ISO 27001</span><span class="cb">PMP</span><span class="cb">AWS Security</span><span class="cb">Azure</span><span class="cb">NIST CSF</span><span class="cb">SOC 2</span><span class="cb">CEH</span><span class="cb">CompTIA Security+</span>
+    </div>
+  </div>
+</div>
+
+<!-- WHY US -->
+<section class="why" id="why">
+  <div class="wrap">
+    <div class="why-grid">
+      <div class="fade-left">
+        <div class="stag">Why Xecuredly</div>
+        <h2 class="sh">Built Different.<br>By Design.</h2>
+        <div class="why-list">
+          <div class="why-item"><span class="why-n">01</span><div><h4>Expert-Led Delivery</h4><p>Every engagement is run by certified professionals with 10+ years of domain experience — not junior teams learning on your dime.</p></div></div>
+          <div class="why-item"><span class="why-n">02</span><div><h4>Industry-Specific Solutions</h4><p>We don't sell templates. Each solution is scoped and implemented for your unique threat landscape and workflows.</p></div></div>
+          <div class="why-item"><span class="why-n">03</span><div><h4>Cutting-Edge Toolstack</h4><p>We integrate modern AI, advanced analytics, and next-gen cybersecurity tools — not yesterday's solutions repackaged.</p></div></div>
+          <div class="why-item"><span class="why-n">04</span><div><h4>24/7 Dedicated Support</h4><p>Your project doesn't operate on business hours. Neither do we. Direct access to your consultant whenever you need them.</p></div></div>
+          <div class="why-item"><span class="why-n">05</span><div><h4>Rapid, Agile Implementation</h4><p>Our delivery model is structured for speed without sacrificing quality. Engagements launch and deliver on schedule — every time.</p></div></div>
+        </div>
+      </div>
+      <div class="fade-right" style="transition-delay:.15s">
+        <div class="terminal">
+          <div class="t-bar">
+            <div class="t-dot" style="background:#ff5f56"></div>
+            <div class="t-dot" style="background:#ffbd2e"></div>
+            <div class="t-dot" style="background:#27c93f"></div>
+            <span class="ttitle">xecured_assessment.sh</span>
+          </div>
+          <div class="t-body">
+            <div class="t-ln"><span class="t-pr">$</span><span class="t-cm"> ./run_security_assessment.sh</span></div>
+            <div class="t-out">Initializing threat surface scan...</div>
+            <div class="t-out">Connecting to client environment ✓</div>
+            <div class="t-ln"><span class="t-pr">$</span><span class="t-cm"> scan --endpoints 1247 --deep</span></div>
+            <div class="t-out">[ ████████████████████ ] 100%</div>
+            <div class="t-ok">✓ Critical vulnerabilities patched: 12</div>
+            <div class="t-ok">✓ Compliance gaps closed: 8</div>
+            <div class="t-ok">✓ Risk score improved: 41 → 97/100</div>
+            <div class="t-ln"><span class="t-pr">$</span><span class="t-cm"> deploy_ai_model --env production</span></div>
+            <div class="t-out">Model accuracy: 94.7% | Latency: 12ms</div>
+            <div class="t-ok">✓ Deployment successful — All systems nominal</div>
+            <div class="t-ln"><span class="t-pr">$</span><span class="t-cm"> <span class="t-cursor"></span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi-bg" id="testimonials">
+  <div class="wrap">
+    <div class="stag fade-up">Client Voices</div>
+    <h2 class="sh fade-up">Trusted By Leaders</h2>
+    <div class="testi-grid">
+      <div class="tc fade-up"><div class="tc-q">"</div><div class="tc-stars">★★★★★</div><p class="tc-t">Partnering with Xecuredly completely transformed our approach to cybersecurity. Their consultants are sharp, professional, and deeply committed to our success. We've never felt more secure.</p><div class="tc-a"><div class="tc-av">MO</div><div class="tc-av-info"><h5>Michael Okafor</h5><span>CTO · Tech Triangle</span></div></div></div>
+      <div class="tc fade-up" style="transition-delay:.1s"><div class="tc-q">"</div><div class="tc-stars">★★★★★</div><p class="tc-t">Thanks to Xecuredly's AI training, our team moved from zero to deploying smart automations in under two months. The curriculum was clear, practical, and incredibly valuable.</p><div class="tc-a"><div class="tc-av">ES</div><div class="tc-av-info"><h5>Eniola Samuel</h5><span>Head of Innovation · Creative Minds</span></div></div></div>
+      <div class="tc fade-up" style="transition-delay:.2s"><div class="tc-q">"</div><div class="tc-stars">★★★★★</div><p class="tc-t">Xecuredly delivered exactly what they promised — expert support and seamless execution. Their consultants integrated with our team like they had always been part of it. Exceptional.</p><div class="tc-a"><div class="tc-av">JO</div><div class="tc-av-info"><h5>James Oluchi</h5><span>Director · Swiftbuild Technologies</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="stag fade-up">FAQ</div>
+    <h2 class="sh fade-up">Common Questions</h2>
+    <div class="faq-list fade-up">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>What industries do you serve?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>We serve clients across Financial Services, Healthcare, Government, Energy, Retail, Technology, and Manufacturing. Our consultants bring domain-specific knowledge so our solutions fit your regulatory and operational context — not just generic best practices.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>How quickly can you start on a project?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>For most engagements, we can have a dedicated consultant onboarded and working within 5–7 business days of signing. For emergency incident response or urgent security needs, we have consultants on standby who can mobilize within 24 hours.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>Do you offer remote or on-site consulting?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>Both. The majority of our work is delivered remotely using secure, encrypted collaboration tools. For sensitive engagements — such as physical security audits, on-premise deployments, or executive-level workshops — we provide on-site consultants globally.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>How does pricing work?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>We offer flexible engagement models: fixed-scope project pricing, monthly retainers for ongoing support, and time-and-materials for dynamic engagements. After your initial consultation, we provide a detailed proposal tailored to your scope and budget.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>Are your consultants certified?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>Yes — every Xecuredly consultant holds relevant industry certifications including CISSP, CISM, CEH, PMP, AWS/Azure, and more. We maintain strict vetting standards and only place consultants who are proven in their domain with real-world delivery track records.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)"><h4>What is X-Academy?</h4><div class="faq-icon">+</div></div>
+        <div class="faq-a"><p>X-Academy is our training platform offering structured programs in cybersecurity, data analytics, AI, and project management. Programs range from 2-day intensives to 12-week bootcamps, and are available for individuals and corporate teams. All courses are taught by active practitioners.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact-bg" id="contact">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div class="fade-left">
+        <div class="stag">Let's Talk</div>
+        <h2 class="sh">Ready to Secure<br>Your Future?</h2>
+        <p class="ss" style="margin-top:14px;">Tell us about your challenge. Our consultants will assess your needs and respond within 24 hours with a tailored action plan.</p>
+        <div class="contact-info-items">
+          <div class="ci"><span class="ci-lbl">PHONE</span><div class="ci-val"><a href="tel:+14303469273">+1 (430) 346-9273</a></div></div>
+          <div class="ci"><span class="ci-lbl">EMAIL</span><div class="ci-val"><a href="/cdn-cgi/l/email-protection#b1d9d4dddddef1c9d4d2c4c3d4d5ddc89fd2dedc"><span class="__cf_email__" data-cfemail="a2cac7cececde2dac7c1d7d0c7c6cedb8cc1cdcf">[email&#160;protected]</span></a></div></div>
+          <div class="ci"><span class="ci-lbl">WHATSAPP</span><div class="ci-val"><a href="https://wa.me/18175424307" target="_blank">+1 (817) 542-4307</a></div></div>
+          <div class="ci"><span class="ci-lbl">HQ</span><div class="ci-val">813 Eaglescliffe Landing<br>Wylie, TX 75098, United States</div></div>
+          <div class="ci"><span class="ci-lbl">HOURS</span><div class="ci-val">Mon–Fri: 8AM–6PM CST<br>Emergency: 24/7</div></div>
+        </div>
+      </div>
+      <div class="fade-right" style="transition-delay:.15s">
+        <div class="form-row">
+          <div class="form-g"><label>First Name</label><input type="text" id="fname" placeholder="John"></div>
+          <div class="form-g"><label>Last Name</label><input type="text" id="lname" placeholder="Doe"></div>
+        </div>
+        <div class="form-g"><label>Work Email</label><input type="email" id="femail" placeholder="john@company.com"></div>
+        <div class="form-g"><label>Organization</label><input type="text" id="forg" placeholder="Company name"></div>
+        <div class="form-g"><label>Phone Number</label><input type="tel" id="fphone" placeholder="+1 (000) 000-0000"></div>
+        <div class="form-g">
+          <label>Service Needed</label>
+          <select id="fservice">
+            <option value="">Select a service...</option>
+            <option>Cybersecurity Consulting</option>
+            <option>Data Analytics & Insights</option>
+            <option>Artificial Intelligence</option>
+            <option>PMO Setup & Optimization</option>
+            <option>Consultant Resourcing</option>
+            <option>Training & Capacity Building</option>
+          </select>
+        </div>
+        <div class="form-g"><label>Tell Us About Your Challenge</label><textarea id="fmessage" placeholder="Describe your project, timeline, or security concerns..."></textarea></div>
+        <button class="form-submit" onclick="sendToWhatsApp()">Send Request via WhatsApp →</button>
+        <div class="form-note">// Expect a response within 24 hours · All info is confidential</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-top">
+      <div>
+        <div class="f-logo">X<span>ecuredly</span></div>
+        <p class="f-desc">Your trusted partner in cybersecurity, AI, analytics, and project management. We train, consult, and secure — globally.</p>
+        <div class="f-social">
+          <a class="f-soc" href="#" title="LinkedIn">in</a>
+          <a class="f-soc" href="#" title="Twitter">𝕏</a>
+          <a class="f-soc" href="#" title="YouTube">▶</a>
+          <a class="f-soc" href="https://wa.me/18175424307" target="_blank" title="WhatsApp">wa</a>
+        </div>
+      </div>
+      <div class="f-col">
+        <h5>Services</h5>
+        <ul>
+          <li><a href="#services">Cybersecurity</a></li>
+          <li><a href="#services">Data Analytics</a></li>
+          <li><a href="#services">AI Solutions</a></li>
+          <li><a href="#services">PMO Setup</a></li>
+          <li><a href="#services">Resourcing</a></li>
+          <li><a href="#services">Training</a></li>
+        </ul>
+      </div>
+      <div class="f-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#why">About Us</a></li>
+          <li><a href="#">X-Academy</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="f-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:+14303469273">+1 (430) 346-9273</a></li>
+          <li><a href="https://wa.me/18175424307">WhatsApp Us</a></li>
+          <li><a href="/cdn-cgi/l/email-protection#c9a1aca5a5a689b1acaabcbbacada5b0e7aaa6a4"><span class="__cf_email__" data-cfemail="2c44494040436c54494f595e49484055024f4341">[email&#160;protected]</span></a></li>
+          <li><a href="#contact">Wylie, TX 75098</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 Xecuredly. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// PRELOADER
+(function(){
+  var stages=[
+    {pct:12, msg:'> Initializing cryptographic handshake...', cls:'info'},
+    {pct:24, msg:'> [WARN] Scanning 1,247 endpoints...', cls:'warn'},
+    {pct:36, msg:'> Firewall rules validated', cls:'ok'},
+    {pct:48, msg:'> Loading AI threat detection engine...', cls:'info'},
+    {pct:58, msg:'> [CRITICAL] Anomaly detected — neutralizing...', cls:'err'},
+    {pct:68, msg:'> Threat eliminated. System secured.', cls:'ok'},
+    {pct:78, msg:'> Verifying SSL certificates (AES-256)...', cls:'info'},
+    {pct:88, msg:'> Zero-trust policy enforced', cls:'ok'},
+    {pct:100,msg:'> Access granted. Welcome to Xecuredly.', cls:'ok'},
+  ];
+  var si=0;
+  var fillEl=document.getElementById('pl-fill');
+  var pctEl=document.getElementById('pl-pct');
+  var stageEl=document.getElementById('pl-stage');
+  var logEl=document.getElementById('pl-log');
+  var pl=document.getElementById('preloader');
+
+  function done(){
+    if(pl){pl.style.opacity='0';pl.style.pointerEvents='none';}
+    setTimeout(function(){if(pl)pl.style.display='none';},800);
+  }
+
+  if(!fillEl||!pctEl||!stageEl||!logEl||!pl){done();return;}
+
+  // Hard fallback
+  var killTimer=setTimeout(done,8000);
+
+  function step(){
+    if(si>=stages.length){clearTimeout(killTimer);setTimeout(done,500);return;}
+    var s=stages[si++];
+    fillEl.style.width=s.pct+'%';
+    pctEl.textContent=s.pct+'%';
+    stageEl.textContent=s.msg.replace(/^> /,'').replace(/\[.*?\] /,'');
+    var line=document.createElement('div');
+    line.className='pl-line '+s.cls;
+    line.textContent=s.msg;
+    logEl.appendChild(line);
+    setTimeout(function(){line.classList.add('v');},20);
+    // keep only last 4 lines visible
+    var lines=logEl.querySelectorAll('.pl-line');
+    if(lines.length>4)lines[0].remove();
+    var delay=s.pct===100?600:Math.random()*200+160;
+    setTimeout(step,delay);
+  }
+  setTimeout(step,300);
+})()
+
+// PARTICLE CANVAS
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+let W,H,particles=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize();
+window.addEventListener('resize',resize);
+
+class Particle{
+  constructor(){this.reset();}
+  reset(){
+    this.x=Math.random()*W;
+    this.y=Math.random()*H;
+    this.size=Math.random()*1.5+.3;
+    this.speedX=(Math.random()-.5)*.3;
+    this.speedY=(Math.random()-.5)*.3;
+    this.opacity=Math.random()*.4+.1;
+    this.color=Math.random()>.5?'0,245,212':'0,194,255';
+    this.life=Math.random()*200+100;
+    this.maxLife=this.life;
+  }
+  update(){
+    this.x+=this.speedX;this.y+=this.speedY;this.life--;
+    if(this.life<0||this.x<0||this.x>W||this.y<0||this.y>H)this.reset();
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${this.color},${this.opacity*(this.life/this.maxLife)})`;
+    ctx.fill();
+  }
+}
+
+for(let i=0;i<120;i++)particles.push(new Particle());
+
+let mouse={x:-999,y:-999};
+window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+
+function drawConnections(){
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x;
+      const dy=particles[i].y-particles[j].y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<100){
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x,particles[i].y);
+        ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(0,245,212,${.06*(1-dist/100)})`;
+        ctx.lineWidth=.4;
+        ctx.stroke();
+      }
+    }
+    // mouse connection
+    const dx=particles[i].x-mouse.x;
+    const dy=particles[i].y-mouse.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<180){
+      ctx.beginPath();
+      ctx.moveTo(particles[i].x,particles[i].y);
+      ctx.lineTo(mouse.x,mouse.y);
+      ctx.strokeStyle=`rgba(0,245,212,${.15*(1-dist/180)})`;
+      ctx.lineWidth=.6;
+      ctx.stroke();
+    }
+  }
+}
+
+function animate(){
+  ctx.clearRect(0,0,W,H);
+  drawConnections();
+  particles.forEach(p=>{p.update();p.draw();});
+  requestAnimationFrame(animate);
+}
+animate();
+
+// CUSTOM CURSOR
+const cur=document.getElementById('cursor');
+const ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx-3+'px';cur.style.top=my-3+'px';
+});
+function animRing(){rx+=(mx-rx)*.13;ry+=(my-ry)*.13;ring.style.left=rx-15+'px';ring.style.top=ry-15+'px';requestAnimationFrame(animRing);}
+animRing();
+document.querySelectorAll('a,button,.svc-card,.tc,.why-item,.faq-q,.tech-pill,.cb').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.transform='scale(2.5)';ring.style.transform='scale(1.6)';ring.style.borderColor='rgba(0,245,212,.8)';});
+  el.addEventListener('mouseleave',()=>{cur.style.transform='scale(1)';ring.style.transform='scale(1)';ring.style.borderColor='rgba(0,245,212,.45)';});
+});
+
+// NAV SCROLL
+const nav=document.getElementById('mainNav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',scrollY>60);});
+
+// MOBILE MENU
+function toggleMenu(){
+  document.getElementById('hamburger').classList.toggle('active');
+  document.getElementById('mobileMenu').classList.toggle('active');
+  document.body.style.overflow=document.getElementById('mobileMenu').classList.contains('active')?'hidden':'';
+}
+function closeMenu(){
+  document.getElementById('hamburger').classList.remove('active');
+  document.getElementById('mobileMenu').classList.remove('active');
+  document.body.style.overflow='';
+}
+
+// SCROLL ANIMATIONS
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');});
+},{threshold:.1});
+document.querySelectorAll('.fade-up,.fade-left,.fade-right').forEach(el=>obs.observe(el));
+
+// COUNTER ANIMATION
+function animCount(el,target,suffix,dur=1800){
+  const start=performance.now();
+  const step=ts=>{
+    const prog=Math.min((ts-start)/dur,1);
+    const ease=1-Math.pow(1-prog,4);
+    const val=Math.floor(ease*target);
+    el.childNodes[0].textContent=val;
+    if(prog<1)requestAnimationFrame(step);
+    else el.childNodes[0].textContent=target;
+  };
+  requestAnimationFrame(step);
+}
+
+// Hero counters
+const heroCounters=document.querySelectorAll('.counter');
+heroCounters.forEach(el=>{
+  const target=+el.dataset.target;
+  const em=el.querySelector('em');
+  el.innerHTML=`0${em.outerHTML}`;
+  setTimeout(()=>animCount(el,target,'',1800),1400);
+});
+
+// Stats strip counters
+const stripCounters=document.querySelectorAll('.counter2');
+const stripObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el=e.target;
+      const target=+el.dataset.target;
+      const suffix=el.nextElementSibling?el.nextElementSibling.textContent:'';
+      let start=0;const dur=1800;const startTime=performance.now();
+      const step=ts=>{
+        const prog=Math.min((ts-startTime)/dur,1);
+        const ease=1-Math.pow(1-prog,4);
+        el.textContent=Math.floor(ease*target);
+        if(prog<1)requestAnimationFrame(step);
+        else el.textContent=target;
+      };
+      requestAnimationFrame(step);
+      stripObs.unobserve(el);
+    }
+  });
+},{threshold:.5});
+stripCounters.forEach(el=>stripObs.observe(el));
+
+// FAQ ACCORDION
+function toggleFaq(btn){
+  const item=btn.parentElement;
+  const wasOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen)item.classList.add('open');
+}
+
+// WHATSAPP FORM SUBMIT
+function sendToWhatsApp(){
+  const fname=document.getElementById('fname').value.trim();
+  const lname=document.getElementById('lname').value.trim();
+  const email=document.getElementById('femail').value.trim();
+  const org=document.getElementById('forg').value.trim();
+  const phone=document.getElementById('fphone').value.trim();
+  const service=document.getElementById('fservice').value;
+  const msg=document.getElementById('fmessage').value.trim();
+
+  if(!fname||!email||!msg){
+    alert('Please fill in your name, email, and message before sending.');
+    return;
+  }
+
+  const waMsg=`*New Inquiry from Xecuredly Website*
+
+*Name:* ${fname} ${lname}
+*Email:* ${email}
+*Organization:* ${org||'Not specified'}
+*Phone:* ${phone||'Not provided'}
+*Service Needed:* ${service||'Not specified'}
+
+*Message:*
+${msg}
+
+---
+_Sent via xecuredly.com contact form_`;
+
+  const encoded=encodeURIComponent(waMsg);
+  window.open(`https://wa.me/18175424307?text=${encoded}`,'_blank');
+}
+</script>
+</body>
+</html>
